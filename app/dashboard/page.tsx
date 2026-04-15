@@ -29,10 +29,7 @@ export default function Dashboard() {
         .single();
 
       // ❌ Not paid
-      if (!profile?.is_paid) {
-        router.push("/payment-pending");
-        return;
-      }
+      
 
       // ✅ Fetch signals
       const { data: signalData } = await supabase
