@@ -13,23 +13,21 @@ export default function Dashboard() {
 
   useEffect(() => {
     const checkAccess = async () => {
-      const { data: auth } = await supabase.auth.getUser();
+      //const { data: auth } = await supabase.auth.getUser();
 
       // ❌ Not logged in
-      if (!auth.user) {
-        router.push("/login");
-        return;
-      }
+     // if (!auth.user) {
+      //  router.push("/login");
+       // return;
+     // }
 
-      // ✅ Get user profile
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", auth.user.id)
-        .single();
-
-      // ❌ Not paid
       
+      // ❌ Not paid
+      //if (!profile?.is_paid) {
+        //router.push("/payment-pending");
+       // return;
+      //}
+
 
       // ✅ Fetch signals
       const { data: signalData } = await supabase
@@ -54,71 +52,87 @@ export default function Dashboard() {
   }
 
   return (
-    <main className="min-h-screen text-white">
-      <Navbar />
-    <div className="p-6">
+    <main className="min-h-screen dashboard-bg text-white">
+  <Navbar />
 
-  <h1 className="text-2xl font-bold mb-6">
-    Trading Terminal
-  </h1>
+  <div className="p-6">
 
-  {/* TOP STATS */}
-  <div className="grid md:grid-cols-4 gap-6">
+    {/* HEADER */}
+    <div className="flex justify-between items-center mb-6">
+      <h1 className="text-2xl font-bold">
+        Trading Terminal
+      </h1>
 
-    <div className="glass p-5">
-      Balance: $1,250
+      <p className="text-green-400 animate-pulse">
+        ● Live
+      </p>
     </div>
 
-    <div className="glass p-5">
-      Profit: +12%
-    </div>
+    {/* STATS */}
+    <div className="grid md:grid-cols-4 gap-6">
 
-    <div className="glass p-5">
-      Trades: 24
-    </div>
-
-    <div className="glass p-5">
-      Win Rate: 82%
-    </div>
-
-  </div>
-
-  {/* CHART */}
-  <div className="glass mt-10 p-4 h-[400px]">
-    <iframe
-      src="https://s.tradingview.com/widgetembed/?symbol=FX:GBPUSD&theme=dark"
-      className="w-full h-full"
-    ></iframe>
-  </div>
-
-  {/* SIGNALS */}
-  <div className="mt-10">
-    <h2 className="text-xl mb-4">Live Signals</h2>
-
-    {signals.map((signal) => (
-      <div key={signal.id} className="glass p-4 mb-4">
-
-        <div className="flex justify-between">
-          <p>{signal.pair}</p>
-
-          <p className={
-            signal.type === "BUY"
-              ? "text-green-400"
-              : "text-red-400"
-          }>
-            {signal.type}
-          </p>
-        </div>
-
-        <p className="text-gray-400 text-sm">
-          Entry: {signal.entry} | TP: {signal.tp} | SL: {signal.sl}
-        </p>
-
+      <div className="glass p-5 glow-purple">
+        <p className="text-gray-400 text-sm">Balance</p>
+        <h2 className="text-xl">$1,250</h2>
       </div>
-    ))}
-  </div>
 
-</div>
-    </main>
+      <div className="glass p-5">
+        <p className="text-gray-400 text-sm">Profit</p>
+        <h2 className="text-green-400">+12%</h2>
+      </div>
+
+      <div className="glass p-5">
+        <p className="text-gray-400 text-sm">Trades</p>
+        <h2>24</h2>
+      </div>
+
+      <div className="glass p-5">
+        <p className="text-gray-400 text-sm">Win Rate</p>
+        <h2>82%</h2>
+      </div>
+
+    </div>
+
+    {/* CHART */}
+    <div className="glass mt-10 p-4 h-[400px] glow-blue">
+      <iframe
+        src="https://s.tradingview.com/widgetembed/?symbol=FX:GBPUSD&theme=dark"
+        className="w-full h-full"
+      ></iframe>
+    </div>
+
+    {/* SIGNALS */}
+    <div className="mt-10">
+      <h2 className="text-xl font-bold mb-4">
+        Live Signals
+      </h2>
+
+      {signals.map((signal) => (
+        <div key={signal.id} className="glass p-4 mb-4 hover:scale-[1.02] transition">
+
+          <div className="flex justify-between">
+            <p>{signal.pair}</p>
+
+            <p className={
+              signal.type === "BUY"
+                ? "text-green-400"
+                : "text-red-400"
+            }>
+              {signal.type}
+            </p>
+          </div>
+
+          <p className="text-gray-400 text-sm mt-2">
+            Entry: {signal.entry} | TP: {signal.tp} | SL: {signal.sl}
+          </p>
+
+        </div>
+      ))}
+
+    </div>
+
+  </div>
+</main>
+
   );
 }
