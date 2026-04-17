@@ -4,11 +4,11 @@ import Navbar from "@/components/Navbar";
 
 export default function Mentorship() {
   return (
-    <main className="min-h-screen text-white">
+    <main className="min-h-screen text-white pt-20">
       <Navbar />
 
       {/* HERO */}
-      <section className="px-6 py-16 text-center">
+      <section className="px-6 py-16 text-center pt-20">
         <h1 className="text-4xl font-bold">
           Join The LaughterXchange Mentorship
         </h1>
