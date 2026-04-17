@@ -4,7 +4,7 @@ import Navbar from "@/components/Navbar";
 
 export default function PaymentPending() {
   return (
-    <main className="min-h-screen text-white">
+    <main className="min-h-screen text-white pt-20">
       <Navbar />
 
       <div className="flex flex-col items-center justify-center h-[70vh] text-center px-6">

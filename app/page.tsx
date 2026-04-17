@@ -27,7 +27,7 @@ useEffect(() => {
 }, []);
 
   return (
-    <main className="min-h-screen text-white relative">
+    <main className="min-h-screen text-white relative pt-20">
       <Navbar />
 
       {/* 📡 LIVE TICKER */}

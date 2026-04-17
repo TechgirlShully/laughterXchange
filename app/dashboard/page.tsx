@@ -52,7 +52,7 @@ export default function Dashboard() {
   }
 
   return (
-    <main className="min-h-screen dashboard-bg text-white">
+    <main className="min-h-screen dashboard-bg text-white pt-20">
   <Navbar />
 
   <div className="p-6">
