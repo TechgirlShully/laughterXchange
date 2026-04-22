@@ -1,10 +1,19 @@
 "use client";
 
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
+  
+  // LOGOUT
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  };
 
   return (
     <nav className="w-full bg-black/80 backdrop-blur-md border-b border-gray-800 fixed top-0 left-0 z-50">

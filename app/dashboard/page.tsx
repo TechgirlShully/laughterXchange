@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
+  const router = useRouter();
 
   const [loading, setLoading] = useState(true);
   const [signals, setSignals] = useState<any[]>([]);
@@ -19,6 +21,15 @@ export default function Dashboard() {
 
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  // RESET FORM
+  const resetForm = () => {
+    setPair("");
+    setEntry("");
+    setTp("");
+    setSl("");
+    setEditingId(null);
+  };
+
   // ADD SIGNAL
   const addSignal = async () => {
     if (!pair || !entry || !tp || !sl) {
@@ -30,10 +41,25 @@ export default function Dashboard() {
       { pair, type, entry, tp, sl },
     ]);
 
-    if (error) {
-      alert("Error adding signal");
-    } else {
+    if (error) alert("Error adding signal");
+    else {
       alert("Signal added!");
+      resetForm();
+    }
+  };
+
+  // UPDATE SIGNAL
+  const updateSignal = async () => {
+    if (!editingId) return;
+
+    const { error } = await supabase
+      .from("signals")
+      .update({ pair, type, entry, tp, sl })
+      .eq("id", editingId);
+
+    if (error) alert("Error updating signal");
+    else {
+      alert("Updated!");
       resetForm();
     }
   };
@@ -48,11 +74,8 @@ export default function Dashboard() {
       .delete()
       .eq("id", id);
 
-    if (error) {
-      alert("Error deleting signal");
-    } else {
-      alert("Deleted successfully");
-    }
+    if (error) alert("Error deleting");
+    else alert("Deleted");
   };
 
   // START EDIT
@@ -65,92 +88,72 @@ export default function Dashboard() {
     setSl(signal.sl);
   };
 
-  // UPDATE SIGNAL
-  const updateSignal = async () => {
-    if (!editingId) return;
-
-    const { error } = await supabase
-      .from("signals")
-      .update({ pair, type, entry, tp, sl })
-      .eq("id", editingId);
-
-    if (error) {
-      alert("Error updating signal");
-    } else {
-      alert("Updated successfully");
-      resetForm();
-    }
-  };
-
-  // RESET FORM
-  const resetForm = () => {
-    setPair("");
-    setEntry("");
-    setTp("");
-    setSl("");
-    setEditingId(null);
-  };
-
-  // FETCH + REALTIME
+  // 🔐 LOAD USER + DATA
   useEffect(() => {
-  const loadDashboard = async () => {
+    const loadDashboard = async () => {
 
-    // 🔐 Get current user
-    const { data: auth } = await supabase.auth.getUser();
+      const { data: auth } = await supabase.auth.getUser();
 
-    if (!auth.user) {
-      window.location.href = "/login";
-      return;
-    }
+      // ❌ Not logged in
+      if (!auth.user) {
+        router.push("/login");
+        return;
+      }
 
-    // 🔐 Get profile
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("is_admin")
-      .eq("id", auth.user.id)
-      .single();
+      // 🔐 Get profile
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_admin, is_paid")
+        .eq("id", auth.user.id)
+        .single();
 
-    // ✅ Set admin access
-    setIsAdmin(profile?.is_admin || false);
+      setIsAdmin(profile?.is_admin || false);
+      const isPaid = profile?.is_paid || false;
 
-    // 📡 Fetch signals
-    const fetchSignals = async () => {
-      const { data } = await supabase
-        .from("signals")
-        .select("*")
-        .order("created_at", { ascending: false });
+// ❌ Not paid → block access
+if (!isPaid && !profile?.is_admin) {
+  router.push("/payment");
+  return;
+}
 
-      setSignals(data || []);
-      setLoading(false);
+
+      // 📡 Fetch signals
+      const fetchSignals = async () => {
+        const { data } = await supabase
+          .from("signals")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        setSignals(data || []);
+        setLoading(false);
+      };
+
+      await fetchSignals();
+
+      // 🔥 REALTIME
+      const channel = supabase
+        .channel("signals-channel")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "signals",
+          },
+          () => {
+            fetchSignals();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     };
 
-    await fetchSignals();
+    loadDashboard();
+  }, [router]);
 
-    // 🔥 REALTIME
-    const channel = supabase
-      .channel("signals-channel")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "signals",
-        },
-        () => {
-          fetchSignals();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  };
-
-  loadDashboard();
-}, []);
-
-  // LOADING
   if (loading) {
     return <div className="text-white p-10">Loading dashboard...</div>;
   }
@@ -161,114 +164,34 @@ export default function Dashboard() {
 
       <div className="p-6">
 
-        {/* LIVE TICKER */}
-        <div className="flex gap-10 overflow-x-auto text-green-400 text-sm mb-6">
-          <p>GBP/USD</p>
-          <p>EUR/USD</p>
-          <p>USD/JPY</p>
-          <p>XAU/USD</p>
-        </div>
-
         {/* HEADER */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Trading Terminal</h1>
-          <p className="text-green-400 animate-pulse">● Live Market</p>
-        </div>
-
-        {/* STATS */}
-        <div className="grid md:grid-cols-4 gap-6">
-
-          <div className="glass p-5 glow-purple">
-            <p className="text-gray-400 text-sm">Account Balance</p>
-            <h2 className="text-xl">$1,250</h2>
-          </div>
-
-          <div className="glass p-5">
-            <p className="text-gray-400 text-sm">Total Profit</p>
-            <h2 className="text-green-400">+12%</h2>
-          </div>
-
-          <div className="glass p-5">
-            <p className="text-gray-400 text-sm">Trades Taken</p>
-            <h2>24</h2>
-          </div>
-
-          <div className="glass p-5">
-            <p className="text-gray-400 text-sm">Win Rate</p>
-            <h2>75%</h2>
-          </div>
-
-        </div>
-
-        {/* CHART + ACTIVITY */}
-        <div className="grid md:grid-cols-3 gap-6 mt-10">
-
-          <div className="md:col-span-2 glass p-4 h-[400px] glow-blue">
-            <iframe
-              src="https://s.tradingview.com/widgetembed/?symbol=FX:GBPUSD&theme=dark"
-              className="w-full h-full"
-            ></iframe>
-          </div>
-
-          <div className="glass p-4">
-            <h3 className="font-bold mb-4">Recent Activity</h3>
-
-            <div className="space-y-3 text-sm text-gray-400">
-              <p>✔ Signal posted</p>
-              <p>✔ Market active</p>
-              <p>✔ Trade analysis updated</p>
-              <p>✔ System running</p>
-            </div>
-          </div>
-
+        <div className="flex justify-between mb-6">
+          <h1 className="text-2xl font-bold">Trading Dashboard</h1>
+          <p className="text-green-400">● Live</p>
         </div>
 
         {/* ADMIN PANEL */}
         {isAdmin && (
-          <div className="glass p-6 mt-10">
+          <div className="glass p-6 mb-10">
 
-            <h2 className="text-xl font-bold mb-4">
+            <h2 className="font-bold mb-4">
               {editingId ? "Edit Signal" : "Post Signal"}
             </h2>
 
             <div className="grid md:grid-cols-2 gap-4">
 
-              <input
-                placeholder="Pair (GBP/USD)"
-                value={pair}
-                onChange={(e) => setPair(e.target.value)}
-                className="p-3 bg-black border border-gray-700 rounded"
-              />
+              <input placeholder="Pair" value={pair} onChange={(e) => setPair(e.target.value)} className="p-3 bg-black border rounded" />
 
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="p-3 bg-black border border-gray-700 rounded"
-              >
+              <select value={type} onChange={(e) => setType(e.target.value)} className="p-3 bg-black border rounded">
                 <option>BUY</option>
                 <option>SELL</option>
               </select>
 
-              <input
-                placeholder="Entry"
-                value={entry}
-                onChange={(e) => setEntry(e.target.value)}
-                className="p-3 bg-black border border-gray-700 rounded"
-              />
+              <input placeholder="Entry" value={entry} onChange={(e) => setEntry(e.target.value)} className="p-3 bg-black border rounded" />
 
-              <input
-                placeholder="Take Profit"
-                value={tp}
-                onChange={(e) => setTp(e.target.value)}
-                className="p-3 bg-black border border-gray-700 rounded"
-              />
+              <input placeholder="TP" value={tp} onChange={(e) => setTp(e.target.value)} className="p-3 bg-black border rounded" />
 
-              <input
-                placeholder="Stop Loss"
-                value={sl}
-                onChange={(e) => setSl(e.target.value)}
-                className="p-3 bg-black border border-gray-700 rounded"
-              />
+              <input placeholder="SL" value={sl} onChange={(e) => setSl(e.target.value)} className="p-3 bg-black border rounded" />
 
             </div>
 
@@ -283,7 +206,7 @@ export default function Dashboard() {
         )}
 
         {/* SIGNALS */}
-        <div className="mt-10">
+        <div>
           <h2 className="text-xl font-bold mb-4">Live Signals</h2>
 
           {signals.length === 0 && (
@@ -291,51 +214,29 @@ export default function Dashboard() {
           )}
 
           {signals.map((signal) => (
-            <div
-              key={signal.id}
-              className="glass p-4 mb-4 animate-fadeIn"
-            >
+            <div key={signal.id} className="glass p-4 mb-4">
 
-              <div className="flex justify-between items-center">
-                <p className="font-bold">{signal.pair}</p>
-
-                <p
-                  className={
-                    signal.type === "BUY"
-                      ? "text-green-400"
-                      : "text-red-400"
-                  }
-                >
+              <div className="flex justify-between">
+                <p>{signal.pair}</p>
+                <p className={signal.type === "BUY" ? "text-green-400" : "text-red-400"}>
                   {signal.type}
                 </p>
               </div>
 
-              <p className="text-gray-400 text-sm mt-2">
+              <p className="text-sm text-gray-400">
                 Entry: {signal.entry} | TP: {signal.tp} | SL: {signal.sl}
               </p>
 
               {isAdmin && (
-                <div className="flex gap-4 mt-3 text-sm">
-
-                  <button
-                    onClick={() => startEdit(signal)}
-                    className="text-blue-400"
-                  >
-                    Edit
-                  </button>
-
-                  <button
-                    onClick={() => deleteSignal(signal.id)}
-                    className="text-red-400"
-                  >
-                    Delete
-                  </button>
-
+                <div className="flex gap-4 mt-2 text-sm">
+                  <button onClick={() => startEdit(signal)} className="text-blue-400">Edit</button>
+                  <button onClick={() => deleteSignal(signal.id)} className="text-red-400">Delete</button>
                 </div>
               )}
 
             </div>
           ))}
+
         </div>
 
       </div>
