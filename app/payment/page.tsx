@@ -1,17 +1,15 @@
-"use client";
-
-export default function PaymentPage() {
+export default function Payment() {
   return (
-    <main className="min-h-screen flex items-center justify-center text-white p-6">
-
-      <div className="glass p-8 text-center max-w-md">
+    <div className="min-h-screen flex items-center justify-center text-white">
+      <div className="glass p-8 text-center">
 
         <h1 className="text-2xl font-bold mb-4">
-          Complete Your Payment
+          Join Mentorship
         </h1>
 
         <p className="text-gray-400 mb-6">
-          You need to join the mentorship to access the dashboard.
+          To access trading signals and dashboard,
+          complete your payment and contact us.
         </p>
 
         <a
@@ -19,11 +17,10 @@ export default function PaymentPage() {
           target="_blank"
           className="btn-primary"
         >
-          Contact on WhatsApp
+          Pay & Send Proof on WhatsApp
         </a>
 
       </div>
-
-    </main>
+    </div>
   );
 }

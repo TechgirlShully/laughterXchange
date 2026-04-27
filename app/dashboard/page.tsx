@@ -11,6 +11,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [signals, setSignals] = useState<any[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
 
   // FORM STATES
   const [pair, setPair] = useState("");
@@ -18,7 +19,6 @@ export default function Dashboard() {
   const [entry, setEntry] = useState("");
   const [tp, setTp] = useState("");
   const [sl, setSl] = useState("");
-
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // RESET FORM
@@ -30,107 +30,64 @@ export default function Dashboard() {
     setEditingId(null);
   };
 
-  // ADD SIGNAL
-  const addSignal = async () => {
-    if (!pair || !entry || !tp || !sl) {
-      alert("Fill all fields");
-      return;
-    }
-
-    const { error } = await supabase.from("signals").insert([
-      { pair, type, entry, tp, sl },
-    ]);
-
-    if (error) alert("Error adding signal");
-    else {
-      alert("Signal added!");
-      resetForm();
-    }
-  };
-
-  // UPDATE SIGNAL
-  const updateSignal = async () => {
-    if (!editingId) return;
-
-    const { error } = await supabase
+  // 📡 FETCH SIGNALS
+  const fetchSignals = async () => {
+    const { data } = await supabase
       .from("signals")
-      .update({ pair, type, entry, tp, sl })
-      .eq("id", editingId);
+      .select("*")
+      .order("created_at", { ascending: false });
 
-    if (error) alert("Error updating signal");
-    else {
-      alert("Updated!");
-      resetForm();
-    }
+    setSignals(data || []);
   };
 
-  // DELETE SIGNAL
-  const deleteSignal = async (id: string) => {
-    const confirmDelete = confirm("Delete this signal?");
-    if (!confirmDelete) return;
+  // 👤 FETCH USERS (ADMIN)
+  const fetchUsers = async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("*");
 
-    const { error } = await supabase
-      .from("signals")
-      .delete()
-      .eq("id", id);
-
-    if (error) alert("Error deleting");
-    else alert("Deleted");
+    setUsers(data || []);
   };
 
-  // START EDIT
-  const startEdit = (signal: any) => {
-    setEditingId(signal.id);
-    setPair(signal.pair);
-    setType(signal.type);
-    setEntry(signal.entry);
-    setTp(signal.tp);
-    setSl(signal.sl);
-  };
-
-  // 🔐 LOAD USER + DATA
+  // 🔐 LOAD DASHBOARD
   useEffect(() => {
     const loadDashboard = async () => {
 
       const { data: auth } = await supabase.auth.getUser();
 
-      // ❌ Not logged in
+      // ❌ NOT LOGGED IN
       if (!auth.user) {
         router.push("/login");
         return;
       }
 
-      // 🔐 Get profile
       const { data: profile } = await supabase
         .from("profiles")
         .select("is_admin, is_paid")
         .eq("id", auth.user.id)
         .single();
 
-      setIsAdmin(profile?.is_admin || false);
-      const isPaid = profile?.is_paid || false;
+      const isAdminUser = profile?.is_admin === true;
+      const isPaidUser = profile?.is_paid === true;
 
-// ❌ Not paid → block access
-if (!isPaid && !profile?.is_admin) {
-  router.push("/payment");
-  return;
-}
+      setIsAdmin(isAdminUser);
 
+      // ❌ BLOCK UNPAID USERS (ADMIN BYPASS)
+      if (!isAdminUser && !isPaidUser) {
+        router.push("/payment");
+        return;
+      }
 
-      // 📡 Fetch signals
-      const fetchSignals = async () => {
-        const { data } = await supabase
-          .from("signals")
-          .select("*")
-          .order("created_at", { ascending: false });
-
-        setSignals(data || []);
-        setLoading(false);
-      };
-
+      // LOAD DATA
       await fetchSignals();
 
-      // 🔥 REALTIME
+      if (isAdminUser) {
+        await fetchUsers();
+      }
+
+      setLoading(false);
+
+      // 🔥 REALTIME SIGNALS
       const channel = supabase
         .channel("signals-channel")
         .on(
@@ -154,8 +111,72 @@ if (!isPaid && !profile?.is_admin) {
     loadDashboard();
   }, [router]);
 
+  // ➕ ADD SIGNAL
+  const addSignal = async () => {
+    if (!pair || !entry || !tp || !sl) {
+      alert("Fill all fields");
+      return;
+    }
+
+    await supabase.from("signals").insert([
+      { pair, type, entry, tp, sl },
+    ]);
+
+    alert("Signal added!");
+    resetForm();
+    fetchSignals();
+  };
+
+  // ✏️ UPDATE SIGNAL
+  const updateSignal = async () => {
+    if (!editingId) return;
+
+    await supabase
+      .from("signals")
+      .update({ pair, type, entry, tp, sl })
+      .eq("id", editingId);
+
+    alert("Updated!");
+    resetForm();
+    fetchSignals();
+  };
+
+  // ❌ DELETE SIGNAL
+  const deleteSignal = async (id: string) => {
+    if (!confirm("Delete this signal?")) return;
+
+    await supabase
+      .from("signals")
+      .delete()
+      .eq("id", id);
+
+    alert("Deleted");
+    fetchSignals();
+  };
+
+  // ✏️ START EDIT
+  const startEdit = (signal: any) => {
+    setEditingId(signal.id);
+    setPair(signal.pair);
+    setType(signal.type);
+    setEntry(signal.entry);
+    setTp(signal.tp);
+    setSl(signal.sl);
+  };
+
+  // 💰 APPROVE PAYMENT
+  const approvePayment = async (id: string) => {
+    await supabase
+      .from("profiles")
+      .update({ is_paid: true })
+      .eq("id", id);
+
+    fetchUsers();
+  };
+
+  // ⏳ LOADING
   if (loading) {
-    return <div className="text-white p-10">Loading dashboard...</div>;
+    return <div className="text-white p-10">Checking access...</div>;
   }
 
   return (
@@ -167,42 +188,92 @@ if (!isPaid && !profile?.is_admin) {
         {/* HEADER */}
         <div className="flex justify-between mb-6">
           <h1 className="text-2xl font-bold">Trading Dashboard</h1>
-          <p className="text-green-400">● Live</p>
+          <p className="text-green-400 animate-pulse">● Live</p>
         </div>
 
         {/* ADMIN PANEL */}
         {isAdmin && (
-          <div className="glass p-6 mb-10">
+          <>
+            <div className="glass p-6 mb-10">
 
-            <h2 className="font-bold mb-4">
-              {editingId ? "Edit Signal" : "Post Signal"}
-            </h2>
+              <h2 className="font-bold mb-4">
+                {editingId ? "Edit Signal" : "Post Signal"}
+              </h2>
 
-            <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-2 gap-4">
 
-              <input placeholder="Pair" value={pair} onChange={(e) => setPair(e.target.value)} className="p-3 bg-black border rounded" />
+                <input
+                  placeholder="Pair"
+                  value={pair}
+                  onChange={(e) => setPair(e.target.value)}
+                  className="p-3 bg-black border rounded"
+                />
 
-              <select value={type} onChange={(e) => setType(e.target.value)} className="p-3 bg-black border rounded">
-                <option>BUY</option>
-                <option>SELL</option>
-              </select>
+                <select
+                  value={type}
+                  onChange={(e) => setType(e.target.value)}
+                  className="p-3 bg-black border rounded"
+                >
+                  <option>BUY</option>
+                  <option>SELL</option>
+                </select>
 
-              <input placeholder="Entry" value={entry} onChange={(e) => setEntry(e.target.value)} className="p-3 bg-black border rounded" />
+                <input
+                  placeholder="Entry"
+                  value={entry}
+                  onChange={(e) => setEntry(e.target.value)}
+                  className="p-3 bg-black border rounded"
+                />
 
-              <input placeholder="TP" value={tp} onChange={(e) => setTp(e.target.value)} className="p-3 bg-black border rounded" />
+                <input
+                  placeholder="TP"
+                  value={tp}
+                  onChange={(e) => setTp(e.target.value)}
+                  className="p-3 bg-black border rounded"
+                />
 
-              <input placeholder="SL" value={sl} onChange={(e) => setSl(e.target.value)} className="p-3 bg-black border rounded" />
+                <input
+                  placeholder="SL"
+                  value={sl}
+                  onChange={(e) => setSl(e.target.value)}
+                  className="p-3 bg-black border rounded"
+                />
+
+              </div>
+
+              <button
+                onClick={editingId ? updateSignal : addSignal}
+                className="btn-primary mt-4"
+              >
+                {editingId ? "Update Signal" : "Post Signal"}
+              </button>
 
             </div>
 
-            <button
-              onClick={editingId ? updateSignal : addSignal}
-              className="btn-primary mt-4"
-            >
-              {editingId ? "Update Signal" : "Post Signal"}
-            </button>
+            {/* USER PAYMENTS */}
+            <div className="glass p-6 mb-10">
+              <h2 className="font-bold mb-4">User Payments</h2>
 
-          </div>
+              {users.map((user) => (
+                <div key={user.id} className="flex justify-between mb-2">
+
+                  <p>{user.id.slice(0, 8)}...</p>
+
+                  {user.is_paid ? (
+                    <span className="text-green-400">Paid</span>
+                  ) : (
+                    <button
+                      onClick={() => approvePayment(user.id)}
+                      className="text-blue-400"
+                    >
+                      Mark as Paid
+                    </button>
+                  )}
+
+                </div>
+              ))}
+            </div>
+          </>
         )}
 
         {/* SIGNALS */}
@@ -214,23 +285,44 @@ if (!isPaid && !profile?.is_admin) {
           )}
 
           {signals.map((signal) => (
-            <div key={signal.id} className="glass p-4 mb-4">
+            <div
+              key={signal.id}
+              className="glass p-4 mb-4 hover:scale-[1.02] transition"
+            >
 
               <div className="flex justify-between">
                 <p>{signal.pair}</p>
-                <p className={signal.type === "BUY" ? "text-green-400" : "text-red-400"}>
+
+                <p
+                  className={
+                    signal.type === "BUY"
+                      ? "text-green-400"
+                      : "text-red-400"
+                  }
+                >
                   {signal.type}
                 </p>
               </div>
 
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-gray-400 mt-2">
                 Entry: {signal.entry} | TP: {signal.tp} | SL: {signal.sl}
               </p>
 
               {isAdmin && (
                 <div className="flex gap-4 mt-2 text-sm">
-                  <button onClick={() => startEdit(signal)} className="text-blue-400">Edit</button>
-                  <button onClick={() => deleteSignal(signal.id)} className="text-red-400">Delete</button>
+                  <button
+                    onClick={() => startEdit(signal)}
+                    className="text-blue-400"
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    onClick={() => deleteSignal(signal.id)}
+                    className="text-red-400"
+                  >
+                    Delete
+                  </button>
                 </div>
               )}
 

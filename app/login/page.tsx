@@ -3,89 +3,54 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import Navbar from "@/components/Navbar";
 
-export default function LoginPage() {
+export default function Login() {
   const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  const handleAuth = async () => {
-    setLoading(true);
-
+  const handleLogin = async () => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
-      // If login fails → try signup
-      const { error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-
-      if (signUpError) {
-        alert(signUpError.message);
-      } else {
-        alert("Account created! You can now login.");
-      }
+      alert(error.message);
     } else {
       router.push("/dashboard");
     }
-
-    setLoading(false);
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center login-bg text-white px-6">
+    <main className="min-h-screen flex items-center justify-center text-white bg-black">
+      <Navbar />
 
-      {/* CARD */}
-      <div className="glass w-full max-w-md p-8">
+      <div className="glass p-8 w-full max-w-md">
 
-        <h1 className="text-3xl font-bold mb-2 text-center">
-          Welcome Back
-        </h1>
+        <h1 className="text-2xl font-bold mb-6">Login</h1>
 
-        <p className="text-gray-400 text-center mb-6">
-          Login or create your account
-        </p>
+        <input
+          type="email"
+          placeholder="Email"
+          className="w-full p-3 mb-4 bg-black border rounded"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
-        {/* INPUTS */}
-        <div className="space-y-4">
+        <input
+          type="password"
+          placeholder="Password"
+          className="w-full p-3 mb-4 bg-black border rounded"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
 
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-3 bg-black border border-gray-700 rounded focus:outline-none"
-          />
-
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full p-3 bg-black border border-gray-700 rounded focus:outline-none"
-          />
-
-        </div>
-
-        {/* BUTTON */}
-        <button
-          onClick={handleAuth}
-          disabled={loading}
-          className="btn-primary w-full mt-6"
-        >
-          {loading ? "Processing..." : "Login / Sign Up"}
+        <button onClick={handleLogin} className="btn-primary w-full">
+          Login
         </button>
-
-        {/* FOOTER */}
-        <p className="text-gray-500 text-sm text-center mt-6">
-          Access your trading dashboard
-        </p>
 
       </div>
     </main>
