@@ -12,8 +12,9 @@ export default function Dashboard() {
   const [signals, setSignals] = useState<any[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
+  const [userData, setUserData] = useState<any>(null);
 
-  // FORM STATES
+  // FORM STATES (ADMIN)
   const [pair, setPair] = useState("");
   const [type, setType] = useState("BUY");
   const [entry, setEntry] = useState("");
@@ -63,7 +64,7 @@ export default function Dashboard() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("is_admin, is_paid")
+        .select("full_name, is_admin, is_paid")
         .eq("id", auth.user.id)
         .single();
 
@@ -71,6 +72,14 @@ export default function Dashboard() {
       const isPaidUser = profile?.is_paid === true;
 
       setIsAdmin(isAdminUser);
+
+      // SAVE USER DATA
+      setUserData({
+        name: profile?.full_name || "No Name",
+        email: auth.user.email,
+        isAdmin: isAdminUser,
+        isPaid: isPaidUser,
+      });
 
       // ❌ BLOCK UNPAID USERS (ADMIN BYPASS)
       if (!isAdminUser && !isPaidUser) {
@@ -87,7 +96,7 @@ export default function Dashboard() {
 
       setLoading(false);
 
-      // 🔥 REALTIME SIGNALS
+      // 🔥 REALTIME
       const channel = supabase
         .channel("signals-channel")
         .on(
@@ -174,26 +183,75 @@ export default function Dashboard() {
     fetchUsers();
   };
 
+  const totalSignals = signals.length;
+
   // ⏳ LOADING
   if (loading) {
-    return <div className="text-white p-10">Checking access...</div>;
+    return <div className="text-white p-10">Loading dashboard...</div>;
   }
 
   return (
     <main className="min-h-screen dashboard-bg text-white">
       <Navbar />
 
-      <div className="p-6 pt-25">
+      <div className="p-6">
 
         {/* HEADER */}
         <div className="flex justify-between mb-6">
-          <h1 className="text-2xl font-bold">Trading Dashboard</h1>
+          <h1 className="text-2xl font-bold">
+            {isAdmin ? "Admin Dashboard" : "User Dashboard"}
+          </h1>
           <p className="text-green-400 animate-pulse">● Live</p>
         </div>
 
-        {/* ADMIN PANEL */}
+        {/* USER PROFILE CARD */}
+        {userData && (
+          <div className="glass p-6 mb-6 flex flex-col md:flex-row justify-between gap-6">
+
+            <div>
+              <h2 className="text-xl font-bold">
+                {userData.name}
+              </h2>
+
+              <p className="text-gray-400">
+                {userData.email}
+              </p>
+
+              <p className="mt-2">
+                Status:{" "}
+                {userData.isAdmin ? (
+                  <span className="text-purple-400">Admin</span>
+                ) : userData.isPaid ? (
+                  <span className="text-green-400">Active</span>
+                ) : (
+                  <span className="text-red-400">Free</span>
+                )}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+
+              <div className="glass p-4 text-center">
+                <p className="text-gray-400 text-sm">Signals</p>
+                <h3 className="text-lg font-bold">{totalSignals}</h3>
+              </div>
+
+              <div className="glass p-4 text-center">
+                <p className="text-gray-400 text-sm">Access</p>
+                <h3 className="text-lg font-bold">
+                  {userData.isPaid || userData.isAdmin ? "Full" : "Limited"}
+                </h3>
+              </div>
+
+            </div>
+
+          </div>
+        )}
+
+        {/* ================= ADMIN SECTION ================= */}
         {isAdmin && (
           <>
+            {/* SIGNAL CONTROL */}
             <div className="glass p-6 mb-10">
 
               <h2 className="font-bold mb-4">
@@ -257,7 +315,11 @@ export default function Dashboard() {
               {users.map((user) => (
                 <div key={user.id} className="flex justify-between mb-2">
 
-                  <p>{user.id.slice(0, 8)}...</p>
+                  <div>
+                    <p className="font-semibold">
+                      {user.full_name || "No Name"}
+                    </p>
+                  </div>
 
                   {user.is_paid ? (
                     <span className="text-green-400">Paid</span>
@@ -276,7 +338,7 @@ export default function Dashboard() {
           </>
         )}
 
-        {/* SIGNALS */}
+        {/* ================= USER SIGNALS ================= */}
         <div>
           <h2 className="text-xl font-bold mb-4">Live Signals</h2>
 
