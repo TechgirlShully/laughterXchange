@@ -183,7 +183,7 @@ export default function Dashboard() {
     <main className="min-h-screen dashboard-bg text-white">
       <Navbar />
 
-      <div className="p-6">
+      <div className="p-6 pt-25">
 
         {/* HEADER */}
         <div className="flex justify-between mb-6">
