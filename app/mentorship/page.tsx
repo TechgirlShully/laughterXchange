@@ -92,14 +92,25 @@ export default function Mentorship() {
       </section>
 
       {/* EXTRA DETAILS */}
-      <section className="px-6 py-16 max-w-3xl mx-auto text-center">
-        <h2 className="text-2xl font-bold">What You Will Learn</h2>
+      {/* WHAT YOU WILL LEARN */}
+<div className="py-20">
 
-        <p className="text-gray-400 mt-4">
-          Market structure, liquidity, entries, risk control, discipline,
-          and how to trade like professionals.
-        </p>
-      </section>
+  <h2 className="text-3xl font-bold text-center mb-10">
+    What You’ll Learn
+  </h2>
+
+  <div className="grid md:grid-cols-3 gap-6">
+
+    <div className="glass p-6">Market Structure</div>
+    <div className="glass p-6">Entry Strategies</div>
+    <div className="glass p-6">Risk Management</div>
+    <div className="glass p-6">Psychology</div>
+    <div className="glass p-6">Live Trading</div>
+    <div className="glass p-6">Smart Money Concepts</div>
+
+  </div>
+
+</div>
 
       {/* WARNING */}
       <section className="px-6 py-10">

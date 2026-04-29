@@ -73,31 +73,39 @@ useEffect(() => {
         </div>
       </section>
 
-      <section className="px-6 py-16">
-  <h2 className="text-2xl font-bold mb-6">Live Signals Preview</h2>
+      {/* WHY CHOOSE US */}
+<div className="py-20 text-center">
+
+  <h2 className="text-3xl font-bold mb-10">
+    Why Choose LaughterX
+  </h2>
 
   <div className="grid md:grid-cols-3 gap-6">
 
-    <div className="glass p-4">
-      <p>GBP/USD</p>
-      <p className="text-green-400">BUY</p>
-      <p className="text-gray-400 text-sm">Entry: 1.2700 | TP: 1.2750</p>
+    <div className="glass p-6">
+      <h3 className="font-bold mb-2">Accurate Signals</h3>
+      <p className="text-gray-400">
+        High probability setups with clear entries, TP & SL.
+      </p>
     </div>
 
-    <div className="glass p-4">
-      <p>EUR/USD</p>
-      <p className="text-red-400">SELL</p>
-      <p className="text-gray-400 text-sm">Entry: 1.0850 | TP: 1.0800</p>
+    <div className="glass p-6">
+      <h3 className="font-bold mb-2">Beginner Friendly</h3>
+      <p className="text-gray-400">
+        Learn from scratch with structured mentorship.
+      </p>
     </div>
 
-    <div className="glass p-4">
-      <p>USD/JPY</p>
-      <p className="text-green-400">BUY</p>
-      <p className="text-gray-400 text-sm">Entry: 149.00 | TP: 150.00</p>
+    <div className="glass p-6">
+      <h3 className="font-bold mb-2">Community Support</h3>
+      <p className="text-gray-400">
+        Stay connected and grow with other traders.
+      </p>
     </div>
 
   </div>
-</section>
+</div>
+
 
 
       {/* ⚠️ DISCLAIMER */}
@@ -268,34 +276,79 @@ useEffect(() => {
       </section>
 
       {/* 🧾 FOOTER */}
-      <footer className="px-6 py-16 border-t border-white/10">
-        <div className="grid md:grid-cols-4 gap-8">
 
-          <div>
-            <h3 className="font-bold mb-3">LaughterXchange</h3>
-            <p className="text-gray-400">
-              Learn trading the right way.
-            </p>
-          </div>
+      <footer className="w-full bg-black border-t border-gray-800 mt-20">
 
-          <Link href="/">Home</Link>
-<Link href="/market">Market</Link>
-<Link href="/mentorship">Mentorship</Link>
+  <div className="max-w-7xl mx-auto px-6 py-12 grid md:grid-cols-4 gap-10 text-gray-400">
 
-<Link href="/privacy">Privacy Policy</Link>
-<Link href="/terms">Terms</Link>
-<Link href="/risk">Risk Disclaimer</Link>
+    {/* BRAND */}
+    <div>
+      <h2 className="text-white text-xl font-bold mb-3">
+        Laughter<span className="text-purple-400">X</span>
+      </h2>
 
-<a href="https://wa.me/2347017838958">WhatsApp</a>
-<a href="mailto:laughterexchange2@gmail.com">Email</a>
+      <p>
+        Smart trading signals and mentorship to help you grow consistently.
+      </p>
+    </div>
 
+    {/* NAVIGATION */}
+    <div>
+      <h3 className="text-white font-semibold mb-3">Navigation</h3>
 
-        </div>
+      <div className="flex flex-col gap-2">
+        <a href="/">Home</a>
+        <a href="/market">Market</a>
+        <a href="/mentorship">Mentorship</a>
+        <a href="/dashboard">Dashboard</a>
+      </div>
+    </div>
 
-        <p className="text-center text-gray-500 mt-10 text-sm">
-          © 2026 LaughterXchange. All rights reserved.
-        </p>
-      </footer>
+    {/* LEGAL */}
+    <div>
+      <h3 className="text-white font-semibold mb-3">Legal</h3>
+
+      <div className="flex flex-col gap-2">
+        <a href="/privacy">Privacy Policy</a>
+        <a href="/terms">Terms & Conditions</a>
+        <a href="/risk">Risk Disclaimer</a>
+      </div>
+    </div>
+
+    {/* CONTACT */}
+    <div>
+      <h3 className="text-white font-semibold mb-3">Contact</h3>
+
+      <div className="flex flex-col gap-2">
+
+        <a href="https://wa.me/2347017838958" target="_blank">
+          WhatsApp
+        </a>
+
+        <a href="mailto:laughterexchange2@gmail.com">
+          Email
+        </a>
+
+        <a href="https://twitter.com/laughterxchange" target="_blank">
+          Twitter
+        </a>
+
+        <a href="https://instagram.com/laughter_thestrategist" target="_blank">
+          Instagram
+        </a>
+
+      </div>
+    </div>
+
+  </div>
+
+  {/* BOTTOM BAR */}
+  <div className="border-t border-gray-800 text-center py-4 text-gray-500 text-sm">
+    © 2026 LaughterX. All rights reserved.
+  </div>
+
+</footer>
+      
 
       {/* 💬 FLOATING WHATSAPP */}
       <a
